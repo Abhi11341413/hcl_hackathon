@@ -83,7 +83,7 @@ def label(row: ScorecardRow) -> str:
 
 
 # ------------------------------------------------------------------ reasons
-def attention_reasons(row: ScorecardRow) -> list[tuple[str, str]]:
+def attention_reasons(row: ScorecardRow, wau_period: str = "over the three weeks") -> list[tuple[str, str]]:
     """Return (reason, metric) pairs explaining why an initiative is Amber/Red,
     plus supporting signals (falling usage, run-rate below plan). Uses only row values
     and the thresholds in src.config."""
@@ -107,7 +107,7 @@ def attention_reasons(row: ScorecardRow) -> list[tuple[str, str]]:
     if row.run_rate_vs_plan is not None and row.run_rate_vs_plan < 1:
         reasons.append((f"Benefit run-rate is {format_pct(row.run_rate_vs_plan)} of plan", "run_rate_vs_plan"))
     if row.wau_change is not None and row.wau_change < 0:
-        reasons.append((f"Weekly active users changed {format_pct(row.wau_change)} over the three weeks", "wau_change"))
+        reasons.append((f"Weekly active users changed {format_pct(row.wau_change)} {wau_period}", "wau_change"))
     return reasons
 
 
@@ -133,9 +133,10 @@ def _charter_citations(row: ScorecardRow) -> list[Citation]:
     return refs
 
 
-def build_item(row: ScorecardRow, with_charter: bool = True) -> ReportItem:
+def build_item(row: ScorecardRow, with_charter: bool = True,
+               wau_period: str = "over the three weeks") -> ReportItem:
     """Build the report item for one initiative: reasons, plus a citation for each reason."""
-    reasons = attention_reasons(row)
+    reasons = attention_reasons(row, wau_period)
     citations = [Citation(evidence_id=scorecard_evidence_id(row.initiative_id, "status"),
                           claim=f"Status {row.status}")]
     citations += [Citation(evidence_id=scorecard_evidence_id(row.initiative_id, m), claim=text) for text, m in reasons]
@@ -227,10 +228,18 @@ def render_markdown(report_date: date, rows: list[ScorecardRow], counts: dict[st
 def build_weekly_report(rows: list[ScorecardRow]) -> WeeklyReport:
     """Summarise portfolio performance, list Amber/Red initiatives with reasons, and cite
     scorecard values (and charter evidence via M2 retrieve) for every statement."""
+    return build_report_for_date(rows, date.fromisoformat(config.REPORT_DATE))
+
+
+def build_report_for_date(rows: list[ScorecardRow], report_date: date) -> WeeklyReport:
+    """Same as build_weekly_report, for a chosen reporting week ending ``report_date``.
+    ``rows`` must already be the scorecard as of that week (see src.report.insights)."""
     rows = sorted(_dedupe(list(rows or [])), key=_sort_key)
-    report_date = date.fromisoformat(config.REPORT_DATE)
+    first_week = config.REPORTING_WEEKS[0]
+    wau_period = (f"between the weeks ending {first_week} and {report_date.isoformat()}"
+                  if report_date.isoformat() != config.REPORT_DATE else "over the three weeks")
     counts = {s: sum(1 for r in rows if r.status == s) for s in ("Green", "Amber", "Red")}
-    items = [build_item(r) for r in rows if r.status != "Green"]
+    items = [build_item(r, wau_period=wau_period) for r in rows if r.status != "Green"]
     summary = _summary(rows, counts, items)
     markdown = render_markdown(report_date, rows, counts, summary, items)
     logger.info("weekly report built: %d initiatives, %d attention items", len(rows), len(items))

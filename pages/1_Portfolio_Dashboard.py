@@ -9,8 +9,10 @@ import logging
 import streamlit as st
 
 from src import config
+from src.charters import retriever as charter_retriever
 from src.data import loaders as data_loaders
 from src.eval import run_eval
+from src.report.insights import WEEKS, initiative_insights, wau_for_week
 from src.report.weekly import STATUS_ICON, format_months, format_pct, format_usd, label
 from src.scorecard import store as scorecard_store
 
@@ -32,7 +34,8 @@ def _seed_marker() -> float:
     return max((f.stat().st_mtime for f in files), default=0.0)
 
 
-tab_score, tab_dq, tab_eval = st.tabs(["Scorecard", "Data quality log", "Evaluation"])
+tab_score, tab_insight, tab_dq, tab_eval = st.tabs(
+    ["Scorecard", "Initiative insights", "Data quality log", "Evaluation"])
 
 with tab_score:
     try:
@@ -79,6 +82,64 @@ with tab_score:
                 {"Input": "Realised benefit to date", "Value": format_usd(i.realised_benefit_to_date_usd)},
                 {"Input": "Planned annual benefit", "Value": format_usd(i.planned_annual_benefit_usd)},
             ], width="stretch", hide_index=True)
+
+with tab_insight:
+    if not rows:
+        st.info("Build the scorecard on the home page to see initiative insights.")
+    else:
+        pick_i = st.selectbox("Initiative", [label(r) for r in rows], key="insight_pick")
+        row_i = next(r for r in rows if label(r) == pick_i)
+        inp = row_i.inputs
+        st.markdown(f"### {STATUS_ICON[row_i.status]} {label(row_i)}: {row_i.status}")
+        st.caption(f"{inp.initiative_name} · {inp.agency or 'agency n/a'} · {inp.initiative_type or 'type n/a'} · "
+                   f"live since {inp.go_live_date.isoformat()}")
+        m1, m2, m3, m4, m5, m6 = st.columns(6)
+        m1.metric("Adoption", format_pct(row_i.adoption))
+        m2.metric("WAU change", format_pct(row_i.wau_change))
+        m3.metric("ROI", format_pct(row_i.roi))
+        m4.metric("Avg monthly benefit", format_usd(row_i.avg_monthly_benefit))
+        m5.metric("Payback (months)", format_months(row_i.payback_months))
+        m6.metric("Run-rate vs plan", format_pct(row_i.run_rate_vs_plan))
+
+        left, right = st.columns([3, 2])
+        with left:
+            st.markdown("**Insights**")
+            for note in initiative_insights(row_i):
+                st.markdown(f"- {note}")
+        with right:
+            st.markdown("**Weekly active users**")
+            st.bar_chart({"Week ending": list(WEEKS),
+                          "Weekly active users": [wau_for_week(inp, w) for w in WEEKS]},
+                         x="Week ending", y="Weekly active users", height=220)
+            st.caption(f"Licensed users: {inp.licensed_users:,}")
+
+        st.markdown("**From the charter**")
+        try:
+            charter_ev = charter_retriever.retrieve(
+                f"objectives scope benefits risks of {inp.initiative_name}", [row_i.initiative_id], 4)
+        except NotImplementedError:
+            charter_ev = []
+        except Exception:
+            logger.exception("charter retrieval failed for insights")
+            charter_ev = []
+        if not charter_ev:
+            st.caption("No charter evidence available (build the charter index on the home page).")
+        for ev in charter_ev:
+            with st.expander(f"{ev.section or 'Charter'} · {ev.source_file}"
+                             + (f" · relevance {ev.score:.2f}" if ev.score is not None else "")):
+                st.text(ev.text[:800])
+
+        st.markdown("**Data-quality fixes applied to this initiative**")
+        try:
+            fixes = [e for e in _change_log(_seed_marker()) if e.get("initiative_id") == row_i.initiative_id]
+        except Exception:
+            logger.exception("change log failed for insights")
+            fixes = []
+        if fixes:
+            st.dataframe([{k: f.get(k, "") for k in ("issue_id", "field", "before", "after", "rule")} for f in fixes],
+                         width="stretch", hide_index=True)
+        else:
+            st.caption("No corrections were needed for this initiative.")
 
 with tab_dq:
     st.caption("Every correction and standardisation applied to the supplied spreadsheets (FR-02).")
