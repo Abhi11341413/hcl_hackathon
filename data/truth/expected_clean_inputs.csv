@@ -1,0 +1,11 @@
+initiative_id,initiative_name,short_name,initiative_type,agency,go_live_date,months_live,licensed_users,wau_week1,wau_week2,wau_week3,total_cost_to_date_usd,realised_benefit_to_date_usd,planned_annual_benefit_usd,charter_file
+NIM-01,FS-FSIS-Public Health Information System (PHIS),PHIS,Predictive model,Department of Agriculture,2021-10-31,60,1800,1150,1190,1240,15663000.0,21145050.0,4028000.0,NIM-01_PHIS_charter.pdf
+NIM-02,SO-OCIO-DISC-Intelligent Automation Center of Excellence (IA CoE),IA CoE,Intelligent automation,Department of Agriculture,2020-05-30,77,400,238,244,240,13381000.0,14986720.0,2595000.0,NIM-02_IA_CoE_charter.docx
+NIM-03,FDA OII Regulatory Business Information Services,RBIS,Predictive analytics,Department of Health and Human Services,2022-09-30,49,2500,1300,1250,1180,34393000.0,40583740.0,14198000.0,NIM-03_RBIS_charter.pdf
+NIM-04,CMS Enterprise Portal Services (EPS),EPS,Conversational bot,Department of Health and Human Services,2020-09-30,73,12000,3900,3700,3450,71153922.0,74711617.86,22330000.0,NIM-04_EPS_charter.docx
+NIM-05,Data Analytics Center of Excellence,DACoE,Analytics & AI platform,Department of State,2019-01-01,94,900,610,640,655,69320019.0,54069614.82,11504000.0,NIM-05_DACoE_charter.pdf
+NIM-06,Next Gen Digital and Customer Care (DCC),DCC Aidan,Conversational bot,Department of Education,2021-06-15,64,5000,3350,3420,3500,60907434.0,60907434.0,13435000.0,NIM-06_DCC_Aidan_charter.docx
+NIM-07,CBP - Automated Targeting System (ATS) Maintenance,ATS,Predictive model,Department of Homeland Security,2021-09-30,61,3200,2400,2450,2480,526101000.0,1262642400.0,191067999.96,NIM-07_ATS_charter.pdf
+NIM-08,StateChat,StateChat,Copilot (GenAI),Department of State,2024-03-01,32,8000,2900,3600,4300,4200000.0,5880000.0,2756000.0,NIM-08_StateChat_charter.docx
+NIM-09,Commercial Generative AI for Text Generation (AI Chatbot),DHS GenAI Chat,Copilot (GenAI),Department of Homeland Security,2023-10-24,36,20000,4100,3900,3800,2800000.0,1680000.0,1400000.0,NIM-09_DHS_GenAI_Chat_charter.pdf
+NIM-10,Computer-Assisted Coding: SOII Autocoder,SOII Autocoder,Predictive model (NLP classifier),Department of Labor,2015-01-15,141,150,128,131,129,3100000.0,9610000.0,744000.0,NIM-10_SOII_Autocoder_charter.docx

@@ -1,0 +1,16 @@
+Classify the question for the Nimbus Group AI portfolio assistant. Owner: M3.
+
+Routes:
+- numeric: asks for a scorecard metric or status (adoption, WAU change, ROI, average monthly benefit, payback, run-rate vs plan, Green/Amber/Red).
+- narrative: asks about charter content (objectives, scope, risks, benefits case, roles, reviews).
+- mixed: needs both a scorecard value and charter text.
+- out_of_scope: anything the portfolio data cannot answer (forecasts, what-ifs, personal details, general knowledge).
+
+Known initiative IDs and names:
+{initiatives}
+
+Return ONLY valid JSON matching this schema:
+{schema}
+
+QUESTION:
+{question}

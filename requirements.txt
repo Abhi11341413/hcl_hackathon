@@ -1,0 +1,10 @@
+streamlit
+pandas
+openpyxl
+pydantic
+pypdf
+python-docx
+chromadb
+google-genai
+requests
+pytest

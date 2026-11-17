@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+# ~95 MB of downloaded public sources - re-create with: python scripts/download_sources.py
+data/raw/
+data/external/
+# runtime artefacts (scorecard.db, chroma index, change log) are rebuilt by the app
+data/runtime/
+.pytest_cache/
+.env
+.streamlit/secrets.toml

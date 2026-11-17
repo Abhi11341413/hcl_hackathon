@@ -1,0 +1,33 @@
+initiative_ref,week_ending,metric_name,value,unit,reporting_system
+5-000002148,2026-10-30,weekly_active_users,1150.0,users,IT Dashboard export
+5-000002148,2026-11-06,weekly_active_users,1190.0,users,IT Dashboard export
+5-000002148,2026-11-13,weekly_active_users,1240.0,users,IT Dashboard export
+NIM-02,2026-10-30,WAU,238.0,users,Product telemetry
+NIM-02,2026-11-06,WAU,244.0,users,Product telemetry
+NIM-02,2026-11-13,WAU,240.0,users,Product telemetry
+NIM-02,2026-10-23,WAU,231.0,users,Product telemetry
+NIM-03,2026-10-30,adoption_pct_of_licensed,52.0,% of licensed,Product telemetry
+NIM-03,2026-11-06,adoption_pct_of_licensed,50.0,% of licensed,Product telemetry
+NIM-03,2026-11-13,adoption_pct_of_licensed,47.2,% of licensed,Product telemetry
+NIM-04,2026-10-30,Active Users (7-day),3900.0,users,Product telemetry
+NIM-04,2026-11-06,Active Users (7-day),3700.0,users,Product telemetry
+NIM-04,2026-11-13,Active Users (7-day),3450.0,users,Product telemetry
+NIM-05,2026-10-30,weekly_active_users,610.0,users,Product telemetry
+NIM-05,2026-11-06,weekly_active_users,640.0,users,Product telemetry
+NIM-05,2026-11-13,weekly_active_users,655.0,users,Product telemetry
+NIM-05,2026-11-06,weekly_active_users,640.0,users,Product telemetry
+NIM-06,"Oct 30, 2026",WAU,3350.0,users,Product telemetry
+NIM-06,"Nov 06, 2026",WAU,3420.0,users,Product telemetry
+NIM-06,"Nov 13, 2026",WAU,3500.0,users,Product telemetry
+NIM-07,30/10/2026,Active Users (7-day),2400.0,users,Product telemetry
+NIM-07,06/11/2026,Active Users (7-day),2450.0,users,Product telemetry
+NIM-07,13/11/2026,Active Users (7-day),2480.0,users,Product telemetry
+NIM-08,2026-10-30,weekly_active_users,-2900.0,users,Product telemetry
+NIM-08,2026-11-06,weekly_active_users,3600.0,users,Product telemetry
+NIM-08,2026-11-13,weekly_active_users,4300.0,users,Product telemetry
+NIM-09,2026-10-30,WAU,4100.0,users,Product telemetry
+NIM-09,2026-11-06,WAU,3900.0,users,Product telemetry
+NIM-09,2026-11-13,WAU,3800.0,users,Product telemetry
+NIM-10,2026-10-30,weekly_active_users,128.0,users,Product telemetry
+NIM-10,2026-11-06,weekly_active_users,131.0,users,Product telemetry
+NIM-10,2026-11-13,weekly_active_users,129.0,users,Product telemetry

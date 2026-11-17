@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git merge:*)",
+      "Bash(git rebase:*)",
+      "Bash(git reset:*)",
+      "Bash(git checkout:*)",
+      "Bash(git switch:*)",
+      "Edit(/app.py)",
+      "Edit(/src/contracts.py)",
+      "Edit(/src/config.py)",
+      "Edit(/requirements.txt)",
+      "Edit(/CLAUDE.md)",
+      "Edit(/.claude/**)",
+      "Edit(/data/seed/**)",
+      "Edit(/data/truth/**)"
+    ]
+  }
+}
