@@ -21,6 +21,9 @@ logger = logging.getLogger(__name__)
 
 EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
 PHONE_RE = re.compile(r"(?<![\w.])\+?\d[\d\s().-]{7,}\d(?![\w.])")
+# dates are common in charters (CIO reviews, analyses) and must not look like phone numbers
+DATE_RE = re.compile(r"(?<!\d)(?:\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{4})(?!\d)")
+MIN_PHONE_DIGITS = 9
 _NUMBER_RE = re.compile(r"(?<![\w.])(-?)(\$?)(\d[\d,]*(?:\.\d+)?)(%?)")
 _INITIATIVE_ID_RE = re.compile(r"\bNIM-?\d+\b", re.IGNORECASE)
 _TOLERANCE = 1e-9
@@ -101,7 +104,7 @@ def validate(draft: Answer, evidence: list[Evidence]) -> GuardrailResult:
     if unsupported:
         violations.extend(f"unsupported_number:{n}" for n in unsupported)
         fatal = True
-    if EMAIL_RE.search(draft.text or "") or PHONE_RE.search(_strip_ids(draft.text or "", evidence)):
+    if EMAIL_RE.search(draft.text or "") or contains_phone(_strip_ids(draft.text or "", evidence)):
         violations.append("personal_data_in_output")
         fatal = True
 
@@ -114,6 +117,18 @@ def validate(draft: Answer, evidence: list[Evidence]) -> GuardrailResult:
     if violations:
         logger.info("guardrail approved with warnings: %s", violations)
     return GuardrailResult(approved=True, violations=violations, answer=final)
+
+
+def contains_phone(text: str) -> bool:
+    """True when text contains a phone-number-like sequence. Dates are removed first, and a
+    match needs at least MIN_PHONE_DIGITS digits, so "3 (2025-12-23)" is not a phone."""
+    if not text:
+        return False
+    without_dates = DATE_RE.sub(" ", text)
+    return any(
+        sum(ch.isdigit() for ch in match.group(0)) >= MIN_PHONE_DIGITS
+        for match in PHONE_RE.finditer(without_dates)
+    )
 
 
 def unsupported_numbers(text: str, evidence: list[Evidence]) -> list[str]:
