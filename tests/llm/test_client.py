@@ -86,6 +86,7 @@ def test_parse_json_response_rejects_garbage() -> None:
 
 
 def test_call_sarvam_strips_think_block(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(config, "get_secret", lambda name: None)
     class FakeResponse:
         def raise_for_status(self) -> None:
             return None
@@ -103,3 +104,53 @@ def test_call_sarvam_strips_think_block(monkeypatch: pytest.MonkeyPatch) -> None
     assert client._call_sarvam("hi", "key").strip() == '{"a": 1}'
     assert captured["json"]["model"] == config.SARVAM_MODEL
     assert captured["json"]["temperature"] == config.LLM_TEMPERATURE
+    assert captured["json"]["reasoning_effort"] == client.SARVAM_REASONING_EFFORT
+
+
+def test_model_name_override_from_secrets(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(config, "get_secret", lambda name: " gemini-new " if name == "GEMINI_MODEL" else None)
+    assert client.model_name("GEMINI_MODEL", "old") == "gemini-new"
+    assert client.model_name("SARVAM_MODEL", "sarvam-default") == "sarvam-default"
+
+
+def test_permanent_errors_are_not_retried(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(config, "get_secret", lambda name: "k" if name.endswith("_API_KEY") else None)
+    calls = {"gemini": 0}
+
+    class NotFound(Exception):
+        code = 404
+
+    def gone(prompt: str, key: str) -> str:
+        calls["gemini"] += 1
+        raise NotFound("model retired")
+
+    monkeypatch.setattr(client, "_call_gemini", gone)
+    monkeypatch.setattr(client, "_call_sarvam", lambda p, k: '{"route": "narrative"}')
+    assert client.generate_json("prompt", RouteDecision).route == "narrative"
+    assert calls["gemini"] == 1
+
+
+def test_is_permanent_error_reads_http_status() -> None:
+    class Resp:
+        status_code = 503
+
+    class Busy(Exception):
+        response = Resp()
+
+    assert not client.is_permanent_error(Busy("overloaded"))
+    assert not client.is_permanent_error(RuntimeError("timeout"))
+
+
+def test_sarvam_empty_content_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(config, "get_secret", lambda name: None)
+
+    class FakeResponse:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict:
+            return {"choices": [{"message": {"content": ""}, "finish_reason": "length"}]}
+
+    monkeypatch.setattr(client.requests, "post", lambda url, **kw: FakeResponse())
+    with pytest.raises(client.LLMUnavailableError):
+        client._call_sarvam("hi", "key")

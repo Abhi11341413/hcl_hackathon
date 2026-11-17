@@ -26,6 +26,9 @@ SARVAM_URL = "https://api.sarvam.ai/v1/chat/completions"
 EVIDENCE_LINE_SEP = " :: "
 MAX_FALLBACK_SCORECARD_ITEMS = 10
 MAX_FALLBACK_CHARTER_ITEMS = 2
+SARVAM_REASONING_EFFORT = "low"
+SARVAM_MAX_TOKENS = 4096
+PERMANENT_HTTP_CODES = frozenset({400, 401, 403, 404, 429})
 
 _STOPWORDS = frozenset(
     "a an and are as at be been by can could did do does for from had has have how i in is it its "
@@ -58,7 +61,9 @@ def generate_json(prompt: str, schema: type[BaseModel]) -> BaseModel:
                 raw = call(prompt, api_key)
                 return parse_json_response(raw, schema)
             except Exception as exc:  # any provider/parse failure -> retry, then next provider
-                logger.warning("%s attempt %d failed: %s", name, attempt + 1, exc)
+                logger.warning("%s attempt %d failed: %s", name, attempt + 1, _short(exc))
+                if is_permanent_error(exc):
+                    break  # wrong model, bad key or no quota: retrying cannot help
     logger.info("all LLM providers unavailable; using extractive fallback")
     return _extractive_fallback(prompt, schema)
 
@@ -93,7 +98,7 @@ def _call_gemini(prompt: str, api_key: str) -> str:
 
     client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=config.LLM_TIMEOUT_S * 1000))
     response = client.models.generate_content(
-        model=config.GEMINI_MODEL,
+        model=model_name("GEMINI_MODEL", config.GEMINI_MODEL),
         contents=prompt,
         config=types.GenerateContentConfig(
             temperature=config.LLM_TEMPERATURE,
@@ -109,9 +114,13 @@ def _call_sarvam(prompt: str, api_key: str) -> str:
         SARVAM_URL,
         headers={"api-subscription-key": api_key, "Content-Type": "application/json"},
         json={
-            "model": config.SARVAM_MODEL,
+            "model": model_name("SARVAM_MODEL", config.SARVAM_MODEL),
             "messages": [{"role": "user", "content": prompt}],
             "temperature": config.LLM_TEMPERATURE,
+            # sarvam-105b reasons before answering; without a cap on reasoning it can use
+            # the whole token budget and return empty content
+            "reasoning_effort": SARVAM_REASONING_EFFORT,
+            "max_tokens": SARVAM_MAX_TOKENS,
         },
         timeout=config.LLM_TIMEOUT_S,
     )
@@ -120,8 +129,34 @@ def _call_sarvam(prompt: str, api_key: str) -> str:
     if not choices:
         raise LLMUnavailableError("Sarvam returned no choices")
     content = choices[0].get("message", {}).get("content") or ""
-    # sarvam-m may emit a <think>...</think> block before the answer
-    return re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL)
+    # older Sarvam models emit a <think>...</think> block before the answer
+    content = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL).strip()
+    if not content:
+        raise LLMUnavailableError(f"Sarvam returned no content (finish_reason={choices[0].get('finish_reason')})")
+    return content
+
+
+# ------------------------------------------------------------------ helpers
+def model_name(secret_name: str, default: str) -> str:
+    """Model to call: an override from env vars / st.secrets (e.g. GEMINI_MODEL in
+    .streamlit/secrets.toml), else the config default. Lets a retired default be replaced
+    without editing the shared config (see docs/requests/M3.md)."""
+    override = config.get_secret(secret_name)
+    return override.strip() if isinstance(override, str) and override.strip() else default
+
+
+def is_permanent_error(exc: Exception) -> bool:
+    """True for errors a retry cannot fix: bad request, auth, unknown model, quota (4xx)."""
+    status = getattr(exc, "code", None)
+    response = getattr(exc, "response", None)
+    if not isinstance(status, int) and response is not None:
+        status = getattr(response, "status_code", None)
+    return isinstance(status, int) and status in PERMANENT_HTTP_CODES
+
+
+def _short(exc: Exception) -> str:
+    """First line of an exception message, for compact logs."""
+    return str(exc).splitlines()[0][:200] if str(exc) else type(exc).__name__
 
 
 # ------------------------------------------------------------------ extractive fallback
