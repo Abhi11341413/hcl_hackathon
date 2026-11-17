@@ -15,9 +15,9 @@ pytest -q
 On the home page, click **Build / refresh data**. It cleans `data/seed/`, writes the SQLite scorecard and builds the ChromaDB charter index.
 
 ## Team workflow
-- Each member works on their own branch and edits only the files they own. See the ownership table in [CLAUDE.md](CLAUDE.md).
+- Each member works on their own branch and edits only the files they own.
 - Shared files (`app.py`, `src/contracts.py`, `src/config.py`, `requirements.txt`, ...) change only on `main`. Request changes in `docs/requests/<Mx>.md`.
-- Modules talk only through the public functions and Pydantic models listed in CLAUDE.md section 5. `tests/<module>/test_contract_*.py` fails if a signature drifts.
+- Modules talk only through public functions and the Pydantic models in `src/contracts.py`. `tests/<module>/test_contract_*.py` fails if a signature drifts.
 
 ## Data
 `data/seed/` holds the hybrid dataset the app ingests: real US federal IT/AI records plus synthetic usage and benefits, with deliberate data-quality issues. `data/truth/` is the answer key used for tests and evaluation; never index it. Provenance and licences are in [data/README.md](data/README.md).
