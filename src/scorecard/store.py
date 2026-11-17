@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 TABLE = "scorecard"
 SOURCE_FILE = "scorecard.db"
+EVIDENCE_PREFIX = "scorecard"  # evidence_id = "scorecard:<initiative_id>:<metric>", e.g. "scorecard:NIM-05:roi"
 NUMERIC_METRICS: tuple[str, ...] = tuple(m for m in METRIC_NAMES if m != "status")
 
 _SCHEMA = f"""
@@ -98,6 +99,11 @@ def lookup(initiative_ids: list[str], metrics: list[str], db_path: Path) -> list
     return [metric_evidence(row, metric) for row in rows for metric in wanted_metrics]
 
 
+def scorecard_evidence_id(initiative_id: str, metric: str) -> str:
+    """Team-agreed evidence ID for a scorecard value: 'scorecard:<initiative_id>:<metric>'."""
+    return f"{EVIDENCE_PREFIX}:{initiative_id}:{metric}"
+
+
 def metric_evidence(row: ScorecardRow, metric: str) -> Evidence:
     """One citable Evidence item for a metric of one scorecard row."""
     label, _, definition = METRIC_INFO[metric]
@@ -108,7 +114,7 @@ def metric_evidence(row: ScorecardRow, metric: str) -> Evidence:
                 f"ROI {format_metric('roi', row.roi)}. Rule: {definition}.")
     else:
         text = f"{name} {label.lower()}: {format_metric(metric, value)}. Definition: {definition}."
-    return Evidence(evidence_id=f"SC-{row.initiative_id}-{metric}", kind="scorecard",
+    return Evidence(evidence_id=scorecard_evidence_id(row.initiative_id, metric), kind="scorecard",
                     initiative_id=row.initiative_id, text=text, metric=metric, value=value,
                     source_file=SOURCE_FILE, section=metric)
 

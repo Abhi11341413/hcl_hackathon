@@ -63,7 +63,7 @@ def test_save_rejects_duplicate_ids(tmp_path, rows) -> None:
 
 def test_lookup_specific_values(db, rows) -> None:
     evidence = store.lookup(["NIM-05"], ["roi", "status"], db)
-    assert [e.evidence_id for e in evidence] == ["SC-NIM-05-roi", "SC-NIM-05-status"]
+    assert [e.evidence_id for e in evidence] == ["scorecard:NIM-05:roi", "scorecard:NIM-05:status"]
     roi, status = evidence
     expected = next(r for r in rows if r.initiative_id == "NIM-05")
     assert roi.kind == "scorecard" and roi.value == expected.roi and roi.metric == "roi"
@@ -77,7 +77,7 @@ def test_lookup_empty_filters_mean_all(db, rows) -> None:
 
 def test_lookup_normalises_and_ignores_unknowns(db) -> None:
     evidence = store.lookup([" nim-01 ", "NIM-77"], ["ROI", "made_up", "roi"], db)
-    assert [e.evidence_id for e in evidence] == ["SC-NIM-01-roi"]
+    assert [e.evidence_id for e in evidence] == ["scorecard:NIM-01:roi"]
 
 
 def test_lookup_only_unknown_metrics_returns_nothing(db) -> None:
@@ -111,3 +111,14 @@ def test_format_metric(metric, value, expected) -> None:
 def test_format_metric_unknown_raises() -> None:
     with pytest.raises(ValueError):
         store.format_metric("nope", 1.0)
+
+
+def test_evidence_id_format() -> None:
+    assert store.scorecard_evidence_id("NIM-05", "run_rate_vs_plan") == "scorecard:NIM-05:run_rate_vs_plan"
+    kind, initiative_id, metric = "scorecard:NIM-05:run_rate_vs_plan".split(":")
+    assert (kind, initiative_id, metric) == ("scorecard", "NIM-05", "run_rate_vs_plan")
+
+
+def test_all_lookup_ids_use_scorecard_prefix(db) -> None:
+    for ev in store.lookup([], [], db):
+        assert ev.evidence_id == f"scorecard:{ev.initiative_id}:{ev.metric}"
